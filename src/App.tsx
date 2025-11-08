@@ -14,6 +14,7 @@ import RequestBlood from "./pages/RequestBlood";
 import RequestDetail from "./pages/RequestDetail";
 import FindDonors from "./pages/FindDonors";
 import Settings from "./pages/Settings";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/request/:id" element={<ProtectedRoute><RequestDetail /></ProtectedRoute>} />
             <Route path="/find-donors" element={<ProtectedRoute><FindDonors /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

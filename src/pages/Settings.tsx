@@ -12,6 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { BloodGroup } from '@/lib/bloodGroupCompatibility';
+import LocationPicker from '@/components/LocationPicker';
 
 export default function Settings() {
   const [name, setName] = useState('');
@@ -20,6 +21,13 @@ export default function Settings() {
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
   const [state, setState] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [gender, setGender] = useState('');
+  const [weight, setWeight] = useState('');
+  const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [willingToDonate, setWillingToDonate] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -49,6 +57,13 @@ export default function Settings() {
       setCity(data.city);
       setDistrict(data.district);
       setState(data.state);
+      setDateOfBirth(data.date_of_birth || '');
+      setGender(data.gender || '');
+      setWeight(data.weight?.toString() || '');
+      setAddress(data.address || '');
+      setPincode(data.pincode || '');
+      setLatitude(data.latitude);
+      setLongitude(data.longitude);
       setWillingToDonate(data.willing_to_donate);
       setIsAvailable(data.is_available);
     }
@@ -67,6 +82,13 @@ export default function Settings() {
         city,
         district,
         state,
+        date_of_birth: dateOfBirth || null,
+        gender: gender || null,
+        weight: weight ? parseFloat(weight) : null,
+        address: address || null,
+        pincode: pincode || null,
+        latitude,
+        longitude,
         willing_to_donate: willingToDonate,
         is_available: isAvailable,
       })
@@ -180,6 +202,83 @@ export default function Settings() {
                   onChange={(e) => setState(e.target.value)}
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pincode">Pincode</Label>
+                <Input
+                  id="pincode"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Full Address</Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Optional full address"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Select Location on Map</Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Click on the map to set your location for donor matching
+                </p>
+                <LocationPicker
+                  initialPosition={latitude && longitude ? [latitude, longitude] : undefined}
+                  onLocationSelect={(lat, lng, addr) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                    if (addr) setAddress(addr);
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Additional Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Weight (kg)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.1"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>

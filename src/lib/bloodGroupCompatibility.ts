@@ -21,7 +21,7 @@ export function canDonate(donorBloodGroup: BloodGroup, recipientBloodGroup: Bloo
 }
 
 export function getDonationCooldownDays(): number {
-  return 90;
+  return 90; // 90-day cooldown for all donors
 }
 
 export function getDaysUntilEligible(lastDonationDate: string | null): number | null {
