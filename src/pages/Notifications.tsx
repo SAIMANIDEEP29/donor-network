@@ -42,7 +42,12 @@ export default function Notifications() {
             filter: `user_id=eq.${user.id}`
           },
           (payload) => {
-            setNotifications(prev => [payload.new as Notification, ...prev]);
+            const newNotification = payload.new as Notification;
+            setNotifications(prev => [newNotification, ...prev]);
+            toast({
+              title: 'New Notification',
+              description: newNotification.message,
+            });
           }
         )
         .subscribe();
