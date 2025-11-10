@@ -15,8 +15,9 @@ export default function Admin() {
   const { isAdmin, loading: roleLoading } = useRole();
   const [users, setUsers] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
+  const [bloodBanks, setBloodBanks] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [stats, setStats] = useState({ totalUsers: 0, activeDonors: 0, activeRequests: 0 });
+  const [stats, setStats] = useState({ totalUsers: 0, activeDonors: 0, activeRequests: 0, totalBloodBanks: 0 });
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -47,7 +48,13 @@ export default function Admin() {
     // Fetch requests
     const { data: requestsData } = await supabase
       .from('blood_requests')
-      .select('*, profiles!blood_requests_user_id_fkey(name, phone)')
+      .select('*, profiles!blood_requests_requester_id_fkey(name, phone)')
+      .order('created_at', { ascending: false });
+
+    // Fetch blood banks
+    const { data: bloodBanksData } = await supabase
+      .from('blood_banks')
+      .select('*')
       .order('created_at', { ascending: false });
 
     // Fetch audit logs
@@ -60,12 +67,14 @@ export default function Admin() {
     // Calculate stats
     const totalUsers = usersData?.length || 0;
     const activeDonors = usersData?.filter(u => u.willing_to_donate && u.is_available)?.length || 0;
-    const activeRequests = requestsData?.filter(r => r.status === 'pending')?.length || 0;
+    const activeRequests = requestsData?.filter(r => r.status === 'open')?.length || 0;
+    const totalBloodBanks = bloodBanksData?.length || 0;
 
     setUsers(usersData || []);
     setRequests(requestsData || []);
+    setBloodBanks(bloodBanksData || []);
     setAuditLogs(logsData || []);
-    setStats({ totalUsers, activeDonors, activeRequests });
+    setStats({ totalUsers, activeDonors, activeRequests, totalBloodBanks });
   };
 
   const toggleUserRole = async (userId: string, currentRole: string) => {
@@ -125,6 +134,36 @@ export default function Admin() {
     fetchData();
   };
 
+  const verifyBloodBank = async (bankId: string) => {
+    const { error } = await supabase
+      .from('blood_banks')
+      .update({ is_verified: true })
+      .eq('id', bankId);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    toast({ title: 'Success', description: 'Blood bank verified' });
+    fetchData();
+  };
+
+  const toggleBloodBankStatus = async (bankId: string, currentStatus: boolean) => {
+    const { error } = await supabase
+      .from('blood_banks')
+      .update({ is_active: !currentStatus })
+      .eq('id', bankId);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    toast({ title: 'Success', description: 'Blood bank status updated' });
+    fetchData();
+  };
+
   if (roleLoading) {
     return (
       <Layout>
@@ -148,7 +187,7 @@ export default function Admin() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -176,12 +215,22 @@ export default function Admin() {
               <div className="text-2xl font-bold">{stats.activeRequests}</div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Blood Banks</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalBloodBanks}</div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="blood-banks">Blood Banks</TabsTrigger>
             <TabsTrigger value="requests">Requests</TabsTrigger>
             <TabsTrigger value="logs">Audit Logs</TabsTrigger>
           </TabsList>
@@ -234,6 +283,67 @@ export default function Admin() {
                             onClick={() => toggleUserAvailability(user.user_id, user.is_available)}
                           >
                             Toggle Status
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="blood-banks" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Blood Bank Management</CardTitle>
+                <CardDescription>Verify and manage blood banks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Verified</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bloodBanks.map((bank) => (
+                      <TableRow key={bank.id}>
+                        <TableCell>{bank.name}</TableCell>
+                        <TableCell>{bank.contact_number}</TableCell>
+                        <TableCell>{bank.city}, {bank.district}</TableCell>
+                        <TableCell>
+                          <Badge variant={bank.is_active ? 'default' : 'secondary'}>
+                            {bank.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {bank.is_verified ? (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-600" />
+                          )}
+                        </TableCell>
+                        <TableCell className="space-x-2">
+                          {!bank.is_verified && (
+                            <Button
+                              size="sm"
+                              onClick={() => verifyBloodBank(bank.id)}
+                            >
+                              Verify
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => toggleBloodBankStatus(bank.id, bank.is_active)}
+                          >
+                            {bank.is_active ? 'Deactivate' : 'Activate'}
                           </Button>
                         </TableCell>
                       </TableRow>

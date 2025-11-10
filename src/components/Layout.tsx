@@ -14,14 +14,21 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = useRole();
+  const { isAdmin, isBloodBank, role } = useRole();
   
-  const navItems = [
-    { icon: Home, label: 'Home', path: '/home' },
-    { icon: FileText, label: 'Requests', path: '/requests' },
-    { icon: User, label: 'Profile', path: '/profile' },
-    { icon: Bell, label: 'Notifications', path: '/notifications' },
-  ];
+  const navItems = isBloodBank 
+    ? [
+        { icon: Home, label: 'Dashboard', path: '/blood-bank/dashboard' },
+        { icon: FileText, label: 'Requests', path: '/requests' },
+        { icon: Bell, label: 'Notifications', path: '/notifications' },
+        { icon: User, label: 'Profile', path: '/profile' },
+      ]
+    : [
+        { icon: Home, label: 'Home', path: '/home' },
+        { icon: FileText, label: 'Requests', path: '/requests' },
+        { icon: User, label: 'Profile', path: '/profile' },
+        { icon: Bell, label: 'Notifications', path: '/notifications' },
+      ];
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -43,15 +50,34 @@ export default function Layout({ children }: LayoutProps) {
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-4 mt-6">
-                <Link to="/home" className="flex items-center gap-3 text-lg">
-                  <Home className="w-5 h-5" /> Home
-                </Link>
-                <Link to="/requests" className="flex items-center gap-3 text-lg">
-                  <FileText className="w-5 h-5" /> My Requests
-                </Link>
-                <Link to="/find-donors" className="flex items-center gap-3 text-lg">
-                  <User className="w-5 h-5" /> Find Donors
-                </Link>
+                {isBloodBank ? (
+                  <>
+                    <Link to="/blood-bank/dashboard" className="flex items-center gap-3 text-lg">
+                      <Home className="w-5 h-5" /> Dashboard
+                    </Link>
+                    <Link to="/requests" className="flex items-center gap-3 text-lg">
+                      <FileText className="w-5 h-5" /> Blood Requests
+                    </Link>
+                    <Link to="/find-donors" className="flex items-center gap-3 text-lg">
+                      <User className="w-5 h-5" /> Find Donors
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/home" className="flex items-center gap-3 text-lg">
+                      <Home className="w-5 h-5" /> Home
+                    </Link>
+                    <Link to="/requests" className="flex items-center gap-3 text-lg">
+                      <FileText className="w-5 h-5" /> My Requests
+                    </Link>
+                    <Link to="/find-donors" className="flex items-center gap-3 text-lg">
+                      <User className="w-5 h-5" /> Find Donors
+                    </Link>
+                    <Link to="/blood-banks" className="flex items-center gap-3 text-lg">
+                      <User className="w-5 h-5" /> Blood Banks
+                    </Link>
+                  </>
+                )}
                 <Link to="/settings" className="flex items-center gap-3 text-lg">
                   <User className="w-5 h-5" /> Settings
                 </Link>

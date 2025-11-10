@@ -20,7 +20,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -31,8 +31,23 @@ export default function Login() {
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      navigate('/home');
+      setLoading(false);
+      return;
+    }
+
+    // Check user role and redirect accordingly
+    if (data.user) {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+
+      if (roleData?.role === 'blood_bank') {
+        navigate('/blood-bank/dashboard');
+      } else {
+        navigate('/home');
+      }
     }
     
     setLoading(false);

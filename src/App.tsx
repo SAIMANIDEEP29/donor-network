@@ -15,6 +15,8 @@ import RequestDetail from "./pages/RequestDetail";
 import FindDonors from "./pages/FindDonors";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
+import BloodBanks from "./pages/BloodBanks";
+import BloodBankDashboard from "./pages/BloodBankDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +77,8 @@ const App = () => (
             <Route path="/find-donors" element={<ProtectedRoute><FindDonors /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/blood-banks" element={<ProtectedRoute><BloodBanks /></ProtectedRoute>} />
+            <Route path="/blood-bank/dashboard" element={<ProtectedRoute><BloodBankDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

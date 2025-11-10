@@ -10,8 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Droplet } from 'lucide-react';
 import { BloodGroup } from '@/lib/bloodGroupCompatibility';
+import LocationPicker from '@/components/LocationPicker';
 
 export default function Signup() {
+  const [accountType, setAccountType] = useState<'user' | 'blood_bank'>('user');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -24,6 +26,11 @@ export default function Signup() {
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
   const [willingToDonate, setWillingToDonate] = useState(false);
+  // Blood bank specific fields
+  const [bankName, setBankName] = useState('');
+  const [bankAddress, setBankAddress] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -35,91 +42,355 @@ export default function Signup() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          name,
-          phone,
-          blood_group: bloodGroup,
-          willing_to_donate: willingToDonate,
-          city,
-          district,
-          state,
-          date_of_birth: dateOfBirth,
-          gender,
-          weight: weight ? parseFloat(weight) : null,
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: accountType === 'user' ? {
+            name,
+            phone,
+            blood_group: bloodGroup,
+            willing_to_donate: willingToDonate,
+            city,
+            district,
+            state,
+            date_of_birth: dateOfBirth,
+            gender,
+            weight: weight ? parseFloat(weight) : null,
+          } : {
+            name: bankName,
+            phone,
+            city,
+            district,
+            state,
+            blood_group: 'O+', // Default for blood banks
+          }
         }
-      }
-    });
+      });
 
-    if (error) {
+      if (authError) throw authError;
+
+      if (accountType === 'blood_bank' && authData.user) {
+        // Create blood bank entry
+        const { error: bankError } = await supabase
+          .from('blood_banks')
+          .insert({
+            user_id: authData.user.id,
+            name: bankName,
+            contact_number: phone,
+            email: email,
+            address: bankAddress,
+            city,
+            district,
+            state,
+            pincode,
+            license_number: licenseNumber,
+          });
+
+        if (bankError) throw bankError;
+
+        // Assign blood_bank role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: authData.user.id,
+            role: 'blood_bank',
+          });
+
+        if (roleError) throw roleError;
+      }
+
+      toast({
+        title: 'Account created!',
+        description: accountType === 'blood_bank' 
+          ? 'Your blood bank account is pending verification.' 
+          : 'Welcome to the blood donor network.',
+      });
+      
+      navigate(accountType === 'blood_bank' ? '/blood-bank/dashboard' : '/home');
+    } catch (error: any) {
       toast({
         title: 'Signup failed',
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Account created!',
-        description: 'Welcome to the blood donor network.',
-      });
-      navigate('/home');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-background">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
               <Droplet className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Join Donor Network</CardTitle>
-          <CardDescription>Create your account to save lives</CardDescription>
+          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardDescription>Join the blood donor network</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+              <Label htmlFor="accountType">Account Type</Label>
+              <Select value={accountType} onValueChange={(value: any) => setAccountType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Individual Donor</SelectItem>
+                  <SelectItem value="blood_bank">Blood Bank</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+            {accountType === 'blood_bank' ? (
+              // Blood Bank Fields
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="bankName">Blood Bank Name</Label>
+                  <Input
+                    id="bankName"
+                    placeholder="Enter blood bank name"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="Enter your phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Contact Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="Enter contact number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bankAddress">Address</Label>
+                  <Input
+                    id="bankAddress"
+                    placeholder="Enter address"
+                    value={bankAddress}
+                    onChange={(e) => setBankAddress(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      placeholder="City"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pincode">Pincode</Label>
+                    <Input
+                      id="pincode"
+                      placeholder="Pincode"
+                      value={pincode}
+                      onChange={(e) => setPincode(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="district">District</Label>
+                    <Input
+                      id="district"
+                      placeholder="District"
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      placeholder="State"
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="licenseNumber">License Number (Optional)</Label>
+                  <Input
+                    id="licenseNumber"
+                    placeholder="Enter license number"
+                    value={licenseNumber}
+                    onChange={(e) => setLicenseNumber(e.target.value)}
+                  />
+                </div>
+              </>
+            ) : (
+              // Individual Donor Fields
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="Enter your phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bloodGroup">Blood Group</Label>
+                  <Select value={bloodGroup} onValueChange={(value) => setBloodGroup(value as BloodGroup)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bloodGroups.map((group) => (
+                        <SelectItem key={group} value={group}>
+                          {group}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      placeholder="City"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="district">District</Label>
+                    <Input
+                      id="district"
+                      placeholder="District"
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      placeholder="State"
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={dateOfBirth}
+                      onChange={(e) => setDateOfBirth(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select value={gender} onValueChange={setGender}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Weight (kg)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    placeholder="Enter your weight"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="willingToDonate">Willing to donate blood</Label>
+                  <Switch
+                    id="willingToDonate"
+                    checked={willingToDonate}
+                    onCheckedChange={setWillingToDonate}
+                  />
+                </div>
+              </>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -142,118 +413,17 @@ export default function Signup() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bloodGroup">Blood Group</Label>
-              <Select value={bloodGroup} onValueChange={(value) => setBloodGroup(value as BloodGroup)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {bloodGroups.map((group) => (
-                    <SelectItem key={group} value={group}>
-                      {group}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  placeholder="City"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="district">District</Label>
-                <Input
-                  id="district"
-                  placeholder="District"
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                placeholder="State"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  step="0.1"
-                  placeholder="Weight"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={gender} onValueChange={setGender} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-accent/50 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="willingToDonate" className="cursor-pointer">Willing to Donate?</Label>
-                <p className="text-xs text-muted-foreground">Receive notifications for blood requests</p>
-              </div>
-              <Switch
-                id="willingToDonate"
-                checked={willingToDonate}
-                onCheckedChange={setWillingToDonate}
-              />
-            </div>
-
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Creating Account...' : 'Sign Up'}
             </Button>
-          </form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
-            <Link to="/login" className="text-primary hover:underline font-medium">
-              Sign in
-            </Link>
-          </div>
+            <p className="text-center text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link to="/login" className="text-primary hover:underline">
+                Login
+              </Link>
+            </p>
+          </form>
         </CardContent>
       </Card>
     </div>

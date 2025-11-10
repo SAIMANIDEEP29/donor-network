@@ -50,6 +50,101 @@ export type Database = {
         }
         Relationships: []
       }
+      blood_banks: {
+        Row: {
+          address: string | null
+          city: string
+          contact_number: string
+          created_at: string | null
+          district: string
+          email: string
+          established_year: number | null
+          id: string
+          is_active: boolean | null
+          is_verified: boolean | null
+          latitude: number | null
+          license_number: string | null
+          longitude: number | null
+          name: string
+          pincode: string | null
+          state: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          city: string
+          contact_number: string
+          created_at?: string | null
+          district: string
+          email: string
+          established_year?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          license_number?: string | null
+          longitude?: number | null
+          name: string
+          pincode?: string | null
+          state: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          contact_number?: string
+          created_at?: string | null
+          district?: string
+          email?: string
+          established_year?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          license_number?: string | null
+          longitude?: number | null
+          name?: string
+          pincode?: string | null
+          state?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      blood_inventory: {
+        Row: {
+          blood_bank_id: string
+          blood_group: Database["public"]["Enums"]["blood_group_type"]
+          id: string
+          last_updated: string | null
+          units_available: number
+        }
+        Insert: {
+          blood_bank_id: string
+          blood_group: Database["public"]["Enums"]["blood_group_type"]
+          id?: string
+          last_updated?: string | null
+          units_available?: number
+        }
+        Update: {
+          blood_bank_id?: string
+          blood_group?: Database["public"]["Enums"]["blood_group_type"]
+          id?: string
+          last_updated?: string | null
+          units_available?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blood_inventory_blood_bank_id_fkey"
+            columns: ["blood_bank_id"]
+            isOneToOne: false
+            referencedRelation: "blood_banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blood_requests: {
         Row: {
           allow_alternate_groups: boolean | null
@@ -1303,7 +1398,7 @@ export type Database = {
     }
     Enums: {
       acceptance_status: "accepted" | "contacted" | "completed" | "cancelled"
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "blood_bank"
       blood_group_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
       notification_type:
         | "request_created"
@@ -1453,7 +1548,7 @@ export const Constants = {
   public: {
     Enums: {
       acceptance_status: ["accepted", "contacted", "completed", "cancelled"],
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "blood_bank"],
       blood_group_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       notification_type: [
         "request_created",
