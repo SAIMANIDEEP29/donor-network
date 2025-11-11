@@ -1,11 +1,24 @@
-import Layout from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Droplet, Heart, Users, MapPin, Bell, Shield } from 'lucide-react';
+import { Droplet, Heart, Users, MapPin, Bell, Shield, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 export default function About() {
+  const navigate = useNavigate();
+  
   return (
-    <Layout>
-      <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-10 bg-card border-b border-border">
+        <div className="flex items-center gap-3 p-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-xl font-semibold">About LifePulse</h1>
+        </div>
+      </div>
+      
+      <div className="p-4">
+        <div className="space-y-8 max-w-4xl mx-auto">
         {/* Hero Section */}
         <div className="space-y-4 text-center">
           <div className="flex justify-center">
@@ -173,7 +186,8 @@ export default function About() {
         <div className="text-center text-sm text-muted-foreground pb-8">
           <p>© 2025 LifePulse. Built for faster, safer blood access.</p>
         </div>
+        </div>
       </div>
-    </Layout>
+    </div>
   );
 }
