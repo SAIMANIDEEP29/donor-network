@@ -13,6 +13,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { BloodGroup } from '@/lib/bloodGroupCompatibility';
 import LocationPicker from '@/components/LocationPicker';
+import { useRole } from '@/hooks/useRole';
+import { Badge } from '@/components/ui/badge';
 
 export default function Settings() {
   const [name, setName] = useState('');
@@ -32,6 +34,7 @@ export default function Settings() {
   const [isAvailable, setIsAvailable] = useState(true);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const { role, isAdmin, isBloodBank } = useRole();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -124,6 +127,24 @@ export default function Settings() {
 
       <div className="p-4 max-w-2xl mx-auto">
         <form onSubmit={handleSave} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Account Information
+                <Badge variant={isAdmin ? "destructive" : isBloodBank ? "secondary" : "default"}>
+                  {role === 'admin' ? 'Admin' : role === 'blood_bank' ? 'Blood Bank' : 'User'}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {isAdmin && "You have administrative access to manage users, blood banks, and view audit logs."}
+                {isBloodBank && "You can manage blood inventory and view all blood requests."}
+                {!isAdmin && !isBloodBank && "You can request blood, donate, and search for donors and blood banks."}
+              </p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
