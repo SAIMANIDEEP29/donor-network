@@ -2,12 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, AlertCircle, MapPin, Plus } from 'lucide-react';
+import { Droplet, Phone, Shield } from 'lucide-react';
 import Layout from '@/components/Layout';
-import { useAuth } from '@/hooks/useAuth';
 import { BloodGroup } from '@/lib/bloodGroupCompatibility';
 
 interface BloodRequest {
@@ -24,9 +22,7 @@ interface BloodRequest {
 
 export default function Home() {
   const [requests, setRequests] = useState<BloodRequest[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,11 +44,6 @@ export default function Home() {
     setLoading(false);
   };
 
-  const filteredRequests = requests.filter(request =>
-    request.blood_group.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.district.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const getUrgencyColor = (level: string) => {
     switch (level) {
@@ -65,106 +56,105 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="p-4 space-y-6">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Blood Donor Network</h1>
-          <p className="text-muted-foreground">Save lives with your donation</p>
-        </div>
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by blood group or location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            onClick={() => navigate('/request-blood')}
-            className="h-24 flex flex-col gap-2"
-          >
-            <Plus className="w-6 h-6" />
-            <span>Request Blood</span>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => navigate('/find-donors')}
-            className="h-24 flex flex-col gap-2"
-          >
-            <Search className="w-6 h-6" />
-            <span>Find Donors</span>
-          </Button>
-        </div>
-
-        {/* Urgent Requests */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Urgent Requests</h2>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/requests')}>
-              View All
+      <div className="p-4 space-y-8">
+        {/* Hero Section */}
+        <div className="space-y-4 py-8">
+          <h1 className="text-4xl md:text-5xl font-bold leading-tight">
+            Save lives with every <span className="text-destructive">drop</span>
+          </h1>
+          <p className="text-muted-foreground max-w-2xl leading-relaxed">
+            LifePulse connects recipients to compatible donors nearby, sends instant emergency alerts, and keeps donors healthy with a smart cooldown tracker.
+          </p>
+          
+          <div className="flex gap-4 pt-4">
+            <Button size="lg" onClick={() => navigate('/request-blood')} className="gap-2">
+              <Droplet className="w-5 h-5" />
+              Request Blood
+            </Button>
+            <Button size="lg" variant="outline" className="gap-2">
+              <Phone className="w-5 h-5" />
+              Contact
             </Button>
           </div>
 
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading requests...</div>
-          ) : filteredRequests.length === 0 ? (
+          {/* Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-8">
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-                <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No urgent requests at the moment</p>
+              <CardContent className="pt-6">
+                <h3 className="font-semibold">Real-time alerts</h3>
               </CardContent>
             </Card>
-          ) : (
-            <div className="space-y-4">
-              {filteredRequests.map((request) => (
-                <Card
-                  key={request.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => navigate(`/request/${request.id}`)}
-                >
-                  <CardHeader className="pb-3">
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="font-semibold">Verified donors</h3>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="font-semibold">Map-based search</h3>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* How it Works */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <Shield className="w-6 h-6 text-destructive" />
+            <h2 className="text-2xl font-bold">How it works</h2>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <span className="font-semibold">1.</span>
+              <p className="text-muted-foreground">Create an emergency request with the patient's location and needed blood group.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="font-semibold">2.</span>
+              <p className="text-muted-foreground">We alert all compatible, nearby, eligible donors instantly.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="font-semibold">3.</span>
+              <p className="text-muted-foreground">First accepted donor connects with you and proceeds to donate.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Urgent Requests Preview */}
+        {!loading && requests.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Urgent Requests</h2>
+              <Button variant="ghost" onClick={() => navigate('/requests')}>
+                View All
+              </Button>
+            </div>
+            <div className="grid gap-4">
+              {requests.slice(0, 3).map((request) => (
+                <Card key={request.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(`/request/${request.id}`)}>
+                  <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg">{request.patient_name}</CardTitle>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4" />
-                          <span>{request.city}, {request.district}</span>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-destructive rounded-full flex items-center justify-center">
+                            <span className="text-lg font-bold text-destructive-foreground">{request.blood_group}</span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm text-muted-foreground">{request.hospital_name}</p>
+                            <p className="text-sm text-muted-foreground">{request.city}, {request.district}</p>
+                          </div>
                         </div>
                       </div>
                       <Badge className={getUrgencyColor(request.urgency_level)}>
                         {request.urgency_level.toUpperCase()}
                       </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-lg font-bold text-primary-foreground">
-                            {request.blood_group}
-                          </span>
-                        </div>
-                        <div className="text-sm">
-                          <p className="font-medium">{request.hospital_name}</p>
-                          <p className="text-muted-foreground">
-                            {new Date(request.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <Button size="sm">View Details</Button>
-                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Layout>
   );

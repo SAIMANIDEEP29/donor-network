@@ -78,6 +78,9 @@ export default function Layout({ children }: LayoutProps) {
                     </Link>
                   </>
                 )}
+                <Link to="/about" className="flex items-center gap-3 text-lg">
+                  <User className="w-5 h-5" /> About
+                </Link>
                 <Link to="/settings" className="flex items-center gap-3 text-lg">
                   <User className="w-5 h-5" /> Settings
                 </Link>
