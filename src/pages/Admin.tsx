@@ -42,13 +42,25 @@ export default function Admin() {
     // Fetch users
     const { data: usersData } = await supabase
       .from('profiles')
-      .select('*, user_roles(role)')
+      .select('*')
       .order('created_at', { ascending: false });
+
+    // Fetch roles separately (no FK link available for nested selects)
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('user_id, role');
+
+    const usersWithRoles = (usersData || []).map((u: any) => ({
+      ...u,
+      roles: (rolesData || [])
+        .filter((r: any) => r.user_id === u.id)
+        .map((r: any) => r.role),
+    }));
 
     // Fetch requests
     const { data: requestsData } = await supabase
       .from('blood_requests')
-      .select('*, profiles!blood_requests_requester_id_fkey(name, phone)')
+      .select('*')
       .order('created_at', { ascending: false });
 
     // Fetch blood banks
@@ -57,20 +69,20 @@ export default function Admin() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    // Fetch audit logs
+    // Fetch audit logs (no join)
     const { data: logsData } = await supabase
       .from('audit_logs')
-      .select('*, profiles(name)')
+      .select('*')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(200);
 
     // Calculate stats
-    const totalUsers = usersData?.length || 0;
-    const activeDonors = usersData?.filter(u => u.willing_to_donate && u.is_available)?.length || 0;
-    const activeRequests = requestsData?.filter(r => r.status === 'open')?.length || 0;
+    const totalUsers = usersWithRoles.length;
+    const activeDonors = usersWithRoles.filter((u: any) => u.willing_to_donate && u.is_available).length;
+    const activeRequests = (requestsData || []).filter((r: any) => r.status === 'open').length;
     const totalBloodBanks = bloodBanksData?.length || 0;
 
-    setUsers(usersData || []);
+    setUsers(usersWithRoles);
     setRequests(requestsData || []);
     setBloodBanks(bloodBanksData || []);
     setAuditLogs(logsData || []);
@@ -265,8 +277,8 @@ export default function Admin() {
                         <TableCell>{user.blood_group}</TableCell>
                         <TableCell>{user.city}, {user.district}</TableCell>
                         <TableCell>
-                          <Badge variant={user.user_roles?.some((r: any) => r.role === 'admin') ? 'default' : 'secondary'}>
-                            {user.user_roles?.some((r: any) => r.role === 'admin') ? 'Admin' : 'User'}
+                          <Badge variant={user.roles?.includes('admin') ? 'default' : 'secondary'}>
+                            {user.roles?.includes('admin') ? 'Admin' : 'User'}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -283,7 +295,7 @@ export default function Admin() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => toggleUserRole(user.id, user.user_roles?.some((r: any) => r.role === 'admin') ? 'admin' : 'user')}
+                            onClick={() => toggleUserRole(user.id, user.roles?.includes('admin') ? 'admin' : 'user')}
                           >
                             Toggle Role
                           </Button>
@@ -442,7 +454,7 @@ export default function Admin() {
                   <TableBody>
                     {auditLogs.map((log) => (
                       <TableRow key={log.id}>
-                        <TableCell>{log.profiles?.name || 'System'}</TableCell>
+                        <TableCell>{log.user_id || 'System'}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{log.action}</Badge>
                         </TableCell>
