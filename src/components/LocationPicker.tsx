@@ -63,15 +63,8 @@ export default function LocationPicker({ onLocationSelect, initialPosition = [20
 
   return (
     <div className="h-[400px] w-full rounded-lg overflow-hidden border border-border">
-      <MapContainer
-        center={currentPosition}
-        zoom={13}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapContainer key={`${currentPosition[0]}-${currentPosition[1]}`} center={currentPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
+        <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <LocationMarker onLocationSelect={handleLocationSelect} />
       </MapContainer>
     </div>
