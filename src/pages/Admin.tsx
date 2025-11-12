@@ -122,7 +122,7 @@ export default function Admin() {
   const verifyRequest = async (requestId: string) => {
     const { error } = await supabase
       .from('blood_requests')
-      .update({ status: 'verified' })
+      .update({ status: 'fulfilled' })
       .eq('id', requestId);
 
     if (error) {
@@ -130,7 +130,7 @@ export default function Admin() {
       return;
     }
 
-    toast({ title: 'Success', description: 'Request verified' });
+    toast({ title: 'Success', description: 'Request fulfilled' });
     fetchData();
   };
 
@@ -247,9 +247,12 @@ export default function Admin() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
                       <TableHead>Blood Group</TableHead>
+                      <TableHead>Location</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Willing to Donate</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -258,7 +261,9 @@ export default function Admin() {
                       <TableRow key={user.id}>
                         <TableCell>{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.phone}</TableCell>
                         <TableCell>{user.blood_group}</TableCell>
+                        <TableCell>{user.city}, {user.district}</TableCell>
                         <TableCell>
                           <Badge variant={user.user_roles?.some((r: any) => r.role === 'admin') ? 'default' : 'secondary'}>
                             {user.user_roles?.some((r: any) => r.role === 'admin') ? 'Admin' : 'User'}
@@ -269,18 +274,23 @@ export default function Admin() {
                             {user.is_available ? 'Available' : 'Unavailable'}
                           </Badge>
                         </TableCell>
+                        <TableCell>
+                          <Badge variant={user.willing_to_donate ? 'default' : 'outline'}>
+                            {user.willing_to_donate ? 'Yes' : 'No'}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="space-x-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => toggleUserRole(user.user_id, user.user_roles?.some((r: any) => r.role === 'admin') ? 'admin' : 'user')}
+                            onClick={() => toggleUserRole(user.id, user.user_roles?.some((r: any) => r.role === 'admin') ? 'admin' : 'user')}
                           >
                             Toggle Role
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => toggleUserAvailability(user.user_id, user.is_available)}
+                            onClick={() => toggleUserAvailability(user.id, user.is_available)}
                           >
                             Toggle Status
                           </Button>
@@ -364,34 +374,42 @@ export default function Admin() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Patient Name</TableHead>
                       <TableHead>Hospital</TableHead>
                       <TableHead>Blood Group</TableHead>
+                      <TableHead>Location</TableHead>
                       <TableHead>Urgency</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {requests.map((request) => (
                       <TableRow key={request.id}>
+                        <TableCell>{request.patient_name}</TableCell>
                         <TableCell>{request.hospital_name}</TableCell>
                         <TableCell>{request.blood_group}</TableCell>
+                        <TableCell>{request.city}, {request.district}</TableCell>
                         <TableCell>
-                          <Badge variant={request.urgency === 'urgent' ? 'destructive' : 'default'}>
-                            {request.urgency}
+                          <Badge variant={request.urgency_level === 'urgent' ? 'destructive' : 'default'}>
+                            {request.urgency_level}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge>{request.status}</Badge>
                         </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(request.created_at).toLocaleDateString()}
+                        </TableCell>
                         <TableCell>
-                          {request.status === 'pending' && (
+                          {request.status === 'open' && (
                             <Button
                               size="sm"
                               onClick={() => verifyRequest(request.id)}
                             >
                               <CheckCircle className="w-4 h-4 mr-1" />
-                              Verify
+                              Close
                             </Button>
                           )}
                         </TableCell>
@@ -415,7 +433,9 @@ export default function Admin() {
                     <TableRow>
                       <TableHead>User</TableHead>
                       <TableHead>Action</TableHead>
-                      <TableHead>Entity</TableHead>
+                      <TableHead>Entity Type</TableHead>
+                      <TableHead>Details</TableHead>
+                      <TableHead>IP Address</TableHead>
                       <TableHead>Time</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -423,9 +443,19 @@ export default function Admin() {
                     {auditLogs.map((log) => (
                       <TableRow key={log.id}>
                         <TableCell>{log.profiles?.name || 'System'}</TableCell>
-                        <TableCell>{log.action}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{log.action}</Badge>
+                        </TableCell>
                         <TableCell>{log.entity_type}</TableCell>
-                        <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {log.details ? JSON.stringify(log.details) : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {log.ip_address || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(log.created_at).toLocaleString()}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

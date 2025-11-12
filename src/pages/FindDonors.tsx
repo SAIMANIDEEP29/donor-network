@@ -21,6 +21,7 @@ interface Donor {
   is_available: boolean;
   willing_to_donate: boolean;
   distance?: number;
+  last_donation_date?: string;
 }
 
 export default function FindDonors() {
@@ -98,8 +99,9 @@ export default function FindDonors() {
       // Regular search by city/district
       let query = supabase
         .from('profiles')
-        .select('id, name, phone, blood_group, city, district, is_available, willing_to_donate')
-        .eq('willing_to_donate', true);
+        .select('id, name, phone, blood_group, city, district, is_available, willing_to_donate, last_donation_date')
+        .eq('willing_to_donate', true)
+        .eq('is_available', true);
 
       if (selectedBloodGroup !== 'all') {
         query = query.eq('blood_group', selectedBloodGroup);
@@ -123,7 +125,21 @@ export default function FindDonors() {
     setLoading(false);
   };
 
-  const filteredDonors = donors.filter(donor => donor.willing_to_donate);
+  // Filter out donors who have donated in the last 90 days (cooldown period)
+  const filteredDonors = donors.filter(donor => {
+    if (!donor.willing_to_donate || !donor.is_available) return false;
+    
+    // Check 90-day cooldown period
+    if (donor.last_donation_date) {
+      const lastDonation = new Date(donor.last_donation_date);
+      const daysSinceLastDonation = Math.floor((Date.now() - lastDonation.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSinceLastDonation < 90) {
+        return false; // Donor is in cooldown period
+      }
+    }
+    
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background">
