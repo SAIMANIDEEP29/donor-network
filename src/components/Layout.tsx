@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, FileText, User, Bell, Shield, Menu } from 'lucide-react';
+import { Home, FileText, User, Bell, Shield, Menu, Package, History, Building2, Droplet, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRole } from '@/hooks/useRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +55,9 @@ export default function Layout({ children }: LayoutProps) {
                     <Link to="/blood-bank/dashboard" className="flex items-center gap-3 text-lg">
                       <Home className="w-5 h-5" /> Dashboard
                     </Link>
+                    <Link to="/inventory" className="flex items-center gap-3 text-lg">
+                      <Package className="w-5 h-5" /> Inventory
+                    </Link>
                     <Link to="/requests" className="flex items-center gap-3 text-lg">
                       <FileText className="w-5 h-5" /> Blood Requests
                     </Link>
@@ -70,16 +73,19 @@ export default function Layout({ children }: LayoutProps) {
                     <Link to="/requests" className="flex items-center gap-3 text-lg">
                       <FileText className="w-5 h-5" /> My Requests
                     </Link>
+                    <Link to="/donation-history" className="flex items-center gap-3 text-lg">
+                      <History className="w-5 h-5" /> Donation History
+                    </Link>
                     <Link to="/find-donors" className="flex items-center gap-3 text-lg">
-                      <User className="w-5 h-5" /> Find Donors
+                      <Droplet className="w-5 h-5" /> Find Donors
                     </Link>
                     <Link to="/blood-banks" className="flex items-center gap-3 text-lg">
-                      <User className="w-5 h-5" /> Blood Banks
+                      <Building2 className="w-5 h-5" /> Blood Banks
                     </Link>
                   </>
                 )}
                 <Link to="/about" className="flex items-center gap-3 text-lg">
-                  <User className="w-5 h-5" /> About
+                  <Info className="w-5 h-5" /> About
                 </Link>
                 <Link to="/settings" className="flex items-center gap-3 text-lg">
                   <User className="w-5 h-5" /> Settings

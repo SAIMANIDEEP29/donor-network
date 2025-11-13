@@ -3,15 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Save } from 'lucide-react';
+import { Building2, Plus } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
-
-const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 interface BloodBankInfo {
   id: string;
@@ -21,19 +17,13 @@ interface BloodBankInfo {
   is_verified: boolean;
 }
 
-interface Inventory {
-  [key: string]: number;
-}
-
 export default function BloodBankDashboard() {
   const { user } = useAuth();
   const { isBloodBank, loading: roleLoading } = useRole();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [bloodBankInfo, setBloodBankInfo] = useState<BloodBankInfo | null>(null);
-  const [inventory, setInventory] = useState<Inventory>({});
 
   useEffect(() => {
     if (!roleLoading && !isBloodBank) {
@@ -49,7 +39,6 @@ export default function BloodBankDashboard() {
     try {
       setLoading(true);
       
-      // Fetch blood bank info
       const { data: bankData, error: bankError } = await supabase
         .from('blood_banks')
         .select('*')
@@ -58,20 +47,6 @@ export default function BloodBankDashboard() {
 
       if (bankError) throw bankError;
       setBloodBankInfo(bankData);
-
-      // Fetch inventory
-      const { data: inventoryData, error: inventoryError } = await supabase
-        .from('blood_inventory')
-        .select('*')
-        .eq('blood_bank_id', bankData.id);
-
-      if (inventoryError) throw inventoryError;
-
-      const inventoryMap: Inventory = {};
-      inventoryData?.forEach((item) => {
-        inventoryMap[item.blood_group] = item.units_available;
-      });
-      setInventory(inventoryMap);
     } catch (error: any) {
       console.error('Error fetching blood bank data:', error);
       toast({
@@ -82,53 +57,6 @@ export default function BloodBankDashboard() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSaveInventory = async () => {
-    if (!bloodBankInfo) return;
-
-    try {
-      setSaving(true);
-
-      // Update or insert inventory for each blood group
-      for (const bloodGroup of BLOOD_GROUPS) {
-        const units = inventory[bloodGroup] || 0;
-
-        const { error } = await supabase
-          .from('blood_inventory')
-          .upsert({
-            blood_bank_id: bloodBankInfo.id,
-            blood_group: bloodGroup as any,
-            units_available: units,
-          });
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: 'Success',
-        description: 'Inventory updated successfully',
-      });
-      
-      fetchBloodBankData();
-    } catch (error: any) {
-      console.error('Error saving inventory:', error);
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleInventoryChange = (bloodGroup: string, value: string) => {
-    const units = parseInt(value) || 0;
-    setInventory((prev) => ({
-      ...prev,
-      [bloodGroup]: units,
-    }));
   };
 
   if (loading || roleLoading) {
@@ -176,46 +104,26 @@ export default function BloodBankDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Blood Inventory Management
+              Welcome to Your Dashboard
             </CardTitle>
             <CardDescription>
-              Update the number of blood units available for each blood group
+              Manage your blood bank operations and view incoming blood requests
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {BLOOD_GROUPS.map((bloodGroup) => (
-                <div key={bloodGroup} className="space-y-2">
-                  <Label htmlFor={bloodGroup} className="font-semibold">{bloodGroup}</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id={bloodGroup}
-                      type="number"
-                      min="0"
-                      value={inventory[bloodGroup] || 0}
-                      onChange={(e) => handleInventoryChange(bloodGroup, e.target.value)}
-                      placeholder="0"
-                      className="text-lg"
-                    />
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      units
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={handleSaveInventory}
-                disabled={saving}
-                className="flex-1 sm:flex-none"
-              >
-                <Save className="mr-2 h-4 w-4" />
-                {saving ? 'Saving...' : 'Save Inventory'}
+              <Button asChild className="h-24">
+                <a href="/inventory" className="flex flex-col items-center justify-center gap-2">
+                  <Plus className="h-6 w-6" />
+                  <span>Manage Inventory</span>
+                </a>
               </Button>
-              <p className="text-sm text-muted-foreground self-center">
-                Re-entering a blood group will update its units
-              </p>
+              <Button asChild variant="outline" className="h-24">
+                <a href="/requests" className="flex flex-col items-center justify-center gap-2">
+                  <Building2 className="h-6 w-6" />
+                  <span>View Blood Requests</span>
+                </a>
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -17,6 +17,8 @@ import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import BloodBanks from "./pages/BloodBanks";
 import BloodBankDashboard from "./pages/BloodBankDashboard";
+import Inventory from "./pages/Inventory";
+import DonationHistory from "./pages/DonationHistory";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
@@ -80,6 +82,8 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/blood-banks" element={<ProtectedRoute><BloodBanks /></ProtectedRoute>} />
             <Route path="/blood-bank/dashboard" element={<ProtectedRoute><BloodBankDashboard /></ProtectedRoute>} />
+            <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+            <Route path="/donation-history" element={<ProtectedRoute><DonationHistory /></ProtectedRoute>} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
