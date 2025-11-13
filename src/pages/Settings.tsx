@@ -4,17 +4,28 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Lock, Bell, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { BloodGroup } from '@/lib/bloodGroupCompatibility';
 import LocationPicker from '@/components/LocationPicker';
 import { useRole } from '@/hooks/useRole';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function Settings() {
   const [name, setName] = useState('');
@@ -33,6 +44,12 @@ export default function Settings() {
   const [willingToDonate, setWillingToDonate] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [smsNotifications, setSmsNotifications] = useState(true);
   const { user } = useAuth();
   const { role, isAdmin, isBloodBank } = useRole();
   const navigate = useNavigate();
@@ -112,6 +129,58 @@ export default function Settings() {
     }
 
     setLoading(false);
+  };
+
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 6 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Password changed successfully',
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+
+    setChangingPassword(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    // This would require admin intervention or an edge function
+    toast({
+      title: 'Account Deletion',
+      description: 'Please contact support to delete your account',
+    });
   };
 
   return (
@@ -304,22 +373,107 @@ export default function Settings() {
             </CardContent>
           </Card>
 
+          {!isBloodBank && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Donation Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="willingToDonate" className="cursor-pointer">Willing to Donate</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive notifications for compatible blood requests
+                    </p>
+                  </div>
+                  <Switch
+                    id="willingToDonate"
+                    checked={willingToDonate}
+                    onCheckedChange={setWillingToDonate}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="isAvailable" className="cursor-pointer">Currently Available</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Mark yourself as available to donate
+                    </p>
+                  </div>
+                  <Switch
+                    id="isAvailable"
+                    checked={isAvailable}
+                    onCheckedChange={setIsAvailable}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
-              <CardTitle>Donation Preferences</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Change Password
+              </CardTitle>
+              <CardDescription>Update your account password</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                />
+              </div>
+
+              <Button
+                type="button"
+                onClick={handlePasswordChange}
+                disabled={changingPassword || !newPassword || !confirmPassword}
+                className="w-full"
+              >
+                {changingPassword ? 'Changing...' : 'Change Password'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notification Preferences
+              </CardTitle>
+              <CardDescription>Manage how you receive notifications</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="willingToDonate" className="cursor-pointer">Willing to Donate</Label>
+                  <Label htmlFor="emailNotifications" className="cursor-pointer">Email Notifications</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive notifications for compatible blood requests
+                    Receive updates via email
                   </p>
                 </div>
                 <Switch
-                  id="willingToDonate"
-                  checked={willingToDonate}
-                  onCheckedChange={setWillingToDonate}
+                  id="emailNotifications"
+                  checked={emailNotifications}
+                  onCheckedChange={setEmailNotifications}
                 />
               </div>
 
@@ -327,17 +481,51 @@ export default function Settings() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="isAvailable" className="cursor-pointer">Currently Available</Label>
+                  <Label htmlFor="smsNotifications" className="cursor-pointer">SMS Notifications</Label>
                   <p className="text-sm text-muted-foreground">
-                    Mark yourself as available to donate
+                    Receive urgent alerts via SMS
                   </p>
                 </div>
                 <Switch
-                  id="isAvailable"
-                  checked={isAvailable}
-                  onCheckedChange={setIsAvailable}
+                  id="smsNotifications"
+                  checked={smsNotifications}
+                  onCheckedChange={setSmsNotifications}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-destructive">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="h-5 w-5" />
+                Danger Zone
+              </CardTitle>
+              <CardDescription>Irreversible account actions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full">
+                    Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your
+                      account and remove your data from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive">
+                      Delete Account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
 

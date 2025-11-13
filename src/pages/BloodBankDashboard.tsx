@@ -186,7 +186,7 @@ export default function BloodBankDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {BLOOD_GROUPS.map((bloodGroup) => (
                 <div key={bloodGroup} className="space-y-2">
-                  <Label htmlFor={bloodGroup}>{bloodGroup}</Label>
+                  <Label htmlFor={bloodGroup} className="font-semibold">{bloodGroup}</Label>
                   <div className="flex items-center gap-2">
                     <Input
                       id={bloodGroup}
@@ -195,6 +195,7 @@ export default function BloodBankDashboard() {
                       value={inventory[bloodGroup] || 0}
                       onChange={(e) => handleInventoryChange(bloodGroup, e.target.value)}
                       placeholder="0"
+                      className="text-lg"
                     />
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
                       units
@@ -203,15 +204,18 @@ export default function BloodBankDashboard() {
                 </div>
               ))}
             </div>
-            <div className="mt-6">
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Button
                 onClick={handleSaveInventory}
                 disabled={saving}
-                className="w-full sm:w-auto"
+                className="flex-1 sm:flex-none"
               >
                 <Save className="mr-2 h-4 w-4" />
                 {saving ? 'Saving...' : 'Save Inventory'}
               </Button>
+              <p className="text-sm text-muted-foreground self-center">
+                Re-entering a blood group will update its units
+              </p>
             </div>
           </CardContent>
         </Card>
