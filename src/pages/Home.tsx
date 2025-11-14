@@ -60,7 +60,7 @@ export default function Home() {
         {/* Hero Section */}
         <div className="space-y-4 py-8">
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-            Save lives with every <span className="text-destructive">drop</span>
+            Save lives with every <span className="text-destructive">drop of blood</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl leading-relaxed">
             LifePulse connects recipients to compatible donors nearby, sends instant emergency alerts, and keeps donors healthy with a smart cooldown tracker.
