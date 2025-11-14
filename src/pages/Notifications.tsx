@@ -50,6 +50,34 @@ export default function Notifications() {
             });
           }
         )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            const updated = payload.new as Notification;
+            setNotifications(prev => 
+              prev.map(n => n.id === updated.id ? updated : n)
+            );
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            const deleted = payload.old as Notification;
+            setNotifications(prev => prev.filter(n => n.id !== deleted.id));
+          }
+        )
         .subscribe();
 
       return () => {
